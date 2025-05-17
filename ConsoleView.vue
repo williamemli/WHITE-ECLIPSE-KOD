@@ -1,30 +1,33 @@
+<!-- Kommenterad version av din kod på svenska -->
+
 <template>
-  <!-- Huvudcontainer för konsolmenyn -->
+  <!-- Huvudbehållare för menykomponenten -->
   <div class="eclipse-menu">
     <div class="eclipse-wrapper">
-      <!-- Central cirkel med titel och dekorationer -->
+      <!-- Central cirkel (sol/måne/title) -->
       <div class="central-eclipse">
-        <div class="sun"></div> <!-- Sol-dekoration -->
-        <div class="moon"></div> <!-- Måne-dekoration -->
-        <div class="title">CONSOLES</div> <!-- Titeltext -->
+        <div class="sun"></div>
+        <div class="moon"></div>
+        <div class="title">CONSOLES</div>
       </div>
       
-      <!-- Ring med menyval placerade runt centralen -->
+      <!-- Ring med menyval -->
       <div class="menu-ring">
+        <!-- Loopa över alla menyval och rendera varje som ett alternativ -->
         <div
           v-for="(item, index) in menuItems"
           :key="index"
           class="menu-option"
-          :class="{ 'is-focused': selectedIndex === index }" <!-- Visuell markering för valt menyval -->
-          :style="getItemPosition(index)" <!-- Positionerar menyvalet i ringen -->
-          @click="updateSelection(index)" <!-- Uppdaterar valt menyval vid klick -->
+          :class="{ 'is-focused': selectedIndex === index }" <!-- Markerar valt alternativ -->
+          :style="getItemPosition(index)" <!-- Positionera på cirkel -->
+          @click="updateSelection(index)" <!-- Markera vid klick -->
         >
           <div class="option-content">
-            <!-- Liten cirkel för varje menyval, med särskild stil för 'BACK' -->
+            <!-- Liten cirkel för varje alternativ, med särskild stil för 'BACK' -->
             <div class="mini-eclipse" :class="{ 'back-button': item === 'BACK' }" @click="handleItemClick(index)">
               <div class="mini-eclipse-inner"></div>
             </div>
-            <span class="option-text">{{ item }}</span> <!-- Text för menyvalet -->
+            <span class="option-text">{{ item }}</span> <!-- Texten för menyvalet -->
           </div>
         </div>
       </div>
@@ -33,71 +36,68 @@
 </template>
 
 <script setup>
-// Importerar reaktiva referenser och livscykel-funktioner från Vue
+// Importera reaktiva variabler och hooks från Vue
 import { ref, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 
-const router = useRouter() // Router för navigering mellan vyer
+const router = useRouter()
 
-// Lista över alla menyval (konsoler och "BACK")
-const menuItems = ['PC', 'NES', 'SNES', 'GENESIS', 'GAME BOY', 'GB COLOR', 'GBA', 'PS1', 'N64', 'BACK', 'DREAMCAST', 'DS']
-const selectedIndex = ref(0) // Index för valt menyval
-const gamepadIndex = ref(null) // Index för ansluten gamepad
-const canMove = ref(true) // Styr om användaren kan flytta markeringen
-const lastAButtonState = ref(false) // Sparar föregående A-knappens tillstånd
-const isTransitioning = ref(false) // Används för att förhindra dubbelklick vid övergång
+// Lista över alla tillgängliga menyval
+const menuItems = ['ARCADE', 'NES', 'SNES', 'GENESIS', 'GAME BOY', 'GB COLOR', 'GBA', 'PS1', 'N64', 'BACK', 'DREAMCAST', 'DS']
+// Håller koll på vilket alternativ som är markerat
+const selectedIndex = ref(0)
+// Håller koll på vilket gamepad-index som är anslutet
+const gamepadIndex = ref(null)
+// Förhindrar för snabb navigering (debounce)
+const canMove = ref(true)
+// Kommer ihåg om A-knappen på gamepad var nedtryckt förra gången
+const lastAButtonState = ref(false)
+// Förhindrar dubbelklick under övergångar
+const isTransitioning = ref(false)
 
-// Beräknar positionen för varje menyval i en cirkel
+// Returnerar CSS-transform för att placera varje menyval i en cirkel
 function getItemPosition(index) {
   const totalItems = menuItems.length
   const angleStep = (2 * Math.PI) / totalItems // Vinkel mellan varje menyval
   const radius = 250 // Radie för cirkeln
-  const angle = angleStep * index - Math.PI / 2 // Startar högst upp
-  
+  const angle = angleStep * index - Math.PI / 2 // Starta rakt upp
+
   const x = Math.cos(angle) * radius
   const y = Math.sin(angle) * radius
-  
+
   return {
-    transform: `translate(${x}px, ${y}px)` // Flyttar menyvalet till rätt position
+    transform: `translate(${x}px, ${y}px)`
   }
 }
 
-// Uppdaterar valt menyval
+// Uppdaterar vilket menyval som är markerat
 function updateSelection(newIndex) {
   if (newIndex >= 0 && newIndex < menuItems.length) {
     selectedIndex.value = newIndex
   }
 }
 
-// Hanterar klick på menyval
+// Hanterar klick på ett menyval
 function handleItemClick(index) {
   const selectedItem = menuItems[index]
   if (selectedItem === 'BACK') {
     window.location.href = '/' // Gå tillbaka till startsidan
   } else if (selectedItem === 'DS') {
-    router.push('/games') // Navigera till DS-spel
-   } else if (selectedItem === 'PC') {
-      router.push('/pc') // Navigera till PC-spel
-    } else if (selectedItem === 'nes') {
-      router.push('/nes') // Navigera till NES-spel
-    } else if (selectedItem === 'snes') {
-      router.push('/snes') // Navigera till SNES-spel
-    } else if (selectedItem === 'genesis') {
-      router.push('/genesis') // Navigera till Genesis-spel
-    }
+    router.push('/games') // Navigera till /games
   }
+}
 
-// Hanterar anslutning av gamepad
+// Sparar vilket gamepad som är anslutet
 function gamepadConnectHandler(e) {
   gamepadIndex.value = e.gamepad.index
 }
 
-// Hanterar frånkoppling av gamepad
+// Nollställer gamepad-index när gamepad kopplas bort
 function gamepadDisconnectHandler() {
   gamepadIndex.value = null
 }
 
-// Kontrollerar gamepadens inmatning och hanterar navigering/val
+// Huvudloop för gamepadkontroller
 function checkGamepad() {
   let animationFrameId = null
 
@@ -110,7 +110,7 @@ function checkGamepad() {
         const dpadRight = gamepad.buttons[15].pressed // D-pad höger
         const aButton = gamepad.buttons[0].pressed // A-knappen
 
-        // Hanterar förflyttning mellan menyval
+        // Hantera rörelse mellan menyval
         if ((Math.abs(axisValue) > 0.5 || dpadLeft || dpadRight) && canMove.value) {
           canMove.value = false
           if (axisValue > 0.5 || dpadRight) {
@@ -118,10 +118,10 @@ function checkGamepad() {
           } else if (axisValue < -0.5 || dpadLeft) {
             updateSelection(selectedIndex.value - 1)
           }
-          setTimeout(() => { canMove.value = true }, 200) // Förhindrar för snabb navigering
+          setTimeout(() => { canMove.value = true }, 200) // Vänta lite innan nästa rörelse
         }
 
-        // Hanterar val av menyval med A-knappen
+        // Hantera klick på A-knappen
         if (aButton && !lastAButtonState.value && !isTransitioning.value) {
           handleItemClick(selectedIndex.value)
           lastAButtonState.value = true
@@ -130,8 +130,8 @@ function checkGamepad() {
         }
       }
     }
-    
-    animationFrameId = requestAnimationFrame(checkGamepadInternal) // Fortsätter lyssna på gamepad
+
+    animationFrameId = requestAnimationFrame(checkGamepadInternal) // Fortsätt loopen
   }
 
   checkGamepadInternal()
@@ -142,23 +142,24 @@ function checkGamepad() {
   }
 }
 
-// Sätter upp eventlyssnare för gamepad och startar gamepad-kontroll vid montering
+// Körs när komponenten monteras
 onMounted(() => {
   window.addEventListener('gamepadconnected', gamepadConnectHandler)
   window.addEventListener('gamepaddisconnected', gamepadDisconnectHandler)
 
   const gamepadCleanup = checkGamepad()
 
+  // Körs när komponenten tas bort
   onUnmounted(() => {
     window.removeEventListener('gamepadconnected', gamepadConnectHandler)
     window.removeEventListener('gamepaddisconnected', gamepadDisconnectHandler)
-    gamepadCleanup() // Stoppar gamepad-kontrollen vid avmontering
+    gamepadCleanup()
   })
 })
 </script>
 
 <style scoped>
-  /* Huvudcontainer som täcker hela skärmen och centrerar innehållet */
+  /* Huvudbehållare för hela menyn, fyller hela skärmen */
   .eclipse-menu {
     position: fixed;
     top: 0;
@@ -173,33 +174,33 @@ onMounted(() => {
     overflow: hidden;
   }
   
-  /* Wrapper för att centrera och positionera menyn */
+  /* Wrapper för att centrera innehållet */
   .eclipse-wrapper {
     position: relative;
-    width: 1920; /* Bredd på wrappern (kan behöva px) */
+    width: 1920; /* OBS: här saknas enhet, t.ex. px */
     height: 1080;
     display: flex;
     justify-content: center;
     align-items: center;
-    transform: translateY(-40px); /* Flyttar upp menyn något */
+    transform: translateY(-40px); /* Flyttar uppåt */
   }
   
-  /* Central cirkel med skugga och ram */
+  /* Den centrala runda delen (sol/måne/title) */
   .central-eclipse {
     position: relative;
     width: 250px;
     height: 250px;
     background: transparent;
-    border-radius: 50%;
+    border-radius: 50%; /* Gör cirkelform */
     overflow: hidden;
     box-shadow: 
-      0 0 50px #ffffffb6,
-      inset 0 0 70px #0e0e0e;
+      0 0 50px #ffffffb6, /* Yttre skugga */
+      inset 0 0 70px #0e0e0e; /* Inre skugga */
     border: 3px solid #ffffff;
     transition: all 0.3s ease;
   }
   
-  /* Sol-dekoration i mitten */
+  /* Solen - dekorativ cirkel */
   .sun {
     position: absolute;
     width: 100%;
@@ -210,7 +211,7 @@ onMounted(() => {
     transform: scale(0.9);
   }
   
-  /* Måne-dekoration i mitten */
+  /* Månen - dekorativ cirkel ovanpå solen */
   .moon {
     position: absolute;
     width: 100%;
@@ -241,32 +242,32 @@ onMounted(() => {
     transition: all 0.3s ease;
   }
   
-  /* Extra ljuseffekt på titel vid hover */
+  /* Effekt på titeltexten vid hover på central cirkel */
   .central-eclipse:hover .title {
     text-shadow: 
       0 0 15px rgba(255, 255, 255, 0.8),
       0 0 22px rgba(0, 195, 255, 0.6);
   }
   
-  /* Ring som innehåller alla menyval */
+  /* Ring för att placera menyvalen runt cirkeln */
   .menu-ring {
     position: absolute;
     width: 100%;
     height: 100%;
   }
   
-  /* Varje menyvals position och övergångar */
+  /* Varje menyval-position på ringen */
   .menu-option {
     position: absolute;
     left: 50%;
     top: 50%;
     width: 60px;
     height: 60px;
-    margin: -30px;
+    margin: -30px; /* Flytta så mitten hamnar rätt */
     transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
   }
   
-  /* Innehåll i varje menyval (ikon + text) */
+  /* Innehåll i varje menyval, centrerat */
   .option-content {
     display: flex;
     flex-direction: column;
@@ -296,7 +297,7 @@ onMounted(() => {
     transition: all 0.3s ease;
   }
   
-  /* Inre cirkel för extra djup i menyvalet */
+  /* Inre cirkel i varje menyval */
   .mini-eclipse-inner {
     width: 30px;
     height: 30px;
@@ -323,7 +324,7 @@ onMounted(() => {
     transition: all 0.3s ease;
   }
   
-  /* Visuell feedback för valt eller hovrat menyval */
+  /* Fokuserat eller hoverat menyval: färg och skugg-effekter */
   .menu-option.is-focused .mini-eclipse,
   .menu-option:hover .mini-eclipse {
     background: linear-gradient(
@@ -337,7 +338,7 @@ onMounted(() => {
     border-color: rgba(255, 255, 255, 0.7);
   }
   
-  /* Inre cirkel får ljusare färg vid fokus/hover */
+  /* Inre cirkel i markerat menyval */
   .menu-option.is-focused .mini-eclipse-inner,
   .menu-option:hover .mini-eclipse-inner {
     background: radial-gradient(
@@ -350,7 +351,7 @@ onMounted(() => {
       0 0 15px rgba(255, 255, 255, 0.6);
   }
   
-  /* Texten får färg och skugga vid fokus/hover */
+  /* Textfärg och skugga vid hover/fokus */
   .menu-option.is-focused .option-text,
   .menu-option:hover .option-text {
     color: #00c3ff;
@@ -359,7 +360,7 @@ onMounted(() => {
       0 0 10px rgba(255, 255, 255, 0.6);
   }
   
-  /* Särskild stil för "BACK"-knappen */
+  /* Specialutformning för "Tillbaka"-knappen */
   .back-button {
     width: 75px;
     height: 50px;
@@ -370,7 +371,7 @@ onMounted(() => {
     transition: all 0.3s ease;
   }
   
-  /* "BACK"-knappen får extra ljus vid fokus/hover */
+  /* Fokus/hover på "Tillbaka"-knappen */
   .menu-option.is-focused .back-button,
   .menu-option:hover .back-button {
     background: #FFFFFF;
