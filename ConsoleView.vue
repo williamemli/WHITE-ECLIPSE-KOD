@@ -1,5 +1,3 @@
-<!-- Kommenterad version av din kod på svenska -->
-
 <template>
   <!-- Huvudbehållare för menykomponenten -->
   <div class="eclipse-menu">
